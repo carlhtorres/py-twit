@@ -4,7 +4,7 @@
 2. Base de dados para armazenar informacões
 	1. SQLite3
 3. Processar os dados com python
-	1. 5 usuários da amostra com mais seguindores
+	1. 5 usuários da amostra com mais seguidores
 	2. Total de postagens agrupadas por hora
 	3. Total de postagens para cada tag por idioma/país do usuário que postou
 4. API REST
