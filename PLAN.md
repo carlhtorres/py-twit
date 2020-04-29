@@ -70,7 +70,7 @@
 * Refinar docker-compose e dockerfiles
 * Script all-in-one para criar e configurar todas as dependências
 
-### Fase 3 (adicionais)
+# Fase 3 (adicionais)
 * Front-end (django)
 * Database SQL relacional a parte
 * Cloud implementation
