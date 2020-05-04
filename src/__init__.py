@@ -13,20 +13,19 @@ api = twitter.Api(consumer_key=api_key, consumer_secret=api_key_secret, access_t
 
 results = api.GetSearch(raw_query="q=%23devops", return_json=True)
 
-conn = sqlite3.connect('../db/main.db')
+conn = sqlite3.connect('db/main.db')
 
 c = conn.cursor()
 
-try:
-    c.execute("CREATE TABLE tweets (json text, date date)")
-except sqlite3.OperationalError:
-    pass
+#try:
+#    c.execute("CREATE TABLE tweets (json text, date date)")
+#except sqlite3.OperationalError:
+#    pass
 
-insert_db = []
-for result in results:
-    insert_db.append(tuple((str(result), time.time())))
+for key in dict(results['statuses'][0]).keys():
+    print(key)
 
-c.executemany('INSERT INTO tweets VALUES(?,?)', insert_db)
+# c.executemany('INSERT INTO tweets VALUES(?,?)', insert_db)
 
 conn.commit()
 
