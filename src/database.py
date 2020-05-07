@@ -2,8 +2,9 @@ import sqlite3
 
 
 class Database:
-    __main = sqlite3.connect('db/main.db')
-    __aux = sqlite3.connect('db/aux.db')
+    __main = sqlite3.connect('db/main.db', check_same_thread=False)
+    __aux = sqlite3.connect('db/aux.db', check_same_thread=False)
+    # TODO be careful, allowing multiple threads may run in concurrency issues
 
     @staticmethod
     def __create_aux_tables():
