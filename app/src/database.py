@@ -55,7 +55,12 @@ class Database:
 
     @classmethod
     def create_table_tweet(cls):
-        create = '''CREATE TABLE tweets (json text, date date);'''
+        create = '''CREATE TABLE tweets (
+                    id text primary key,
+                    created_at date,
+                    text text,
+                    hashtag text,
+                    user text);'''
         try:
             Database.__main.execute(create)
         except sqlite3.OperationalError:
