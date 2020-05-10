@@ -82,6 +82,8 @@ class Database:
         except sqlite3.OperationalError:
             # TODO yeah
             print("Can't write tweet")
+        except sqlite3.IntegrityError:
+            print("Tweet already saved!")
 
     @classmethod
     def write_tweets(cls, tweets):

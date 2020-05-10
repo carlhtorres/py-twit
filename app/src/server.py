@@ -1,3 +1,4 @@
+import json
 import flask
 
 from database import Database
@@ -26,7 +27,8 @@ class Server:
     @__app.route('/api/read')
     def read():
         print('Returning all tweets saved!\nFix this fuckery shit!\nAnd make it jsons, for Odins sake')
-        return Database.tweets()
+        # TODO properly formatted json
+        return json.dumps(Database.all_tweets())
 
     # @staticmethod
     # @__app.route('/api/update', methods=['PUT', ])
