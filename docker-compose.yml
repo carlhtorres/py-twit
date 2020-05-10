@@ -1,0 +1,17 @@
+py-twit:
+  build: ./application
+  dockerfile: Dockerfile
+  volumes:
+    - db-data:/usr/app/db
+  ports:
+    - "8000:8000"
+  links:
+    - elastic
+
+elastic:
+  image: docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+  ports:
+    - "9200:9200"
+    - "9300:9300"
+  environment:
+    - discovery.type=single-node
