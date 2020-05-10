@@ -1,9 +1,5 @@
-import json
-import logging
-
-import flask
-
-from database import Database
+import json, logging, flask
+from src.database import Database
 
 
 class Server:

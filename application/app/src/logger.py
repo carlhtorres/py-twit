@@ -1,9 +1,8 @@
-import logging
-import logging.config
+import logging.config, os
 
 
 class Logger:
-    logging.config.fileConfig('log.conf')
+    logging.config.fileConfig(f'{os.getcwd()}/log.conf')
     __logger = logging.getLogger('mainLogger')
 
     @property

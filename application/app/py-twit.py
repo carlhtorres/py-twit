@@ -1,13 +1,12 @@
-import sys
-
-from app.src.client import Twitter
-from app.src.database import Database
-from app.src.server import Server
-from app.src.logger import Logger
+import sys, logging
+from src.client import Twitter
+from src.database import Database
+from src.server import Server
+from src.logger import Logger
 
 
 def main():
-    logging = Logger.logger
+    logger = Logger.logger
     twitter = Twitter()
     # TODO add credentials from ENV VARS
     twitter.connect(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

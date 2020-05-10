@@ -1,4 +1,4 @@
-import twitter
+from twitter.api import Api, TwitterError
 
 
 class Twitter:
@@ -6,7 +6,7 @@ class Twitter:
     __api_key_secret = "__api key secret"
     __access_token_key = "access token key"
     __access_token_secret = "access token secret"
-    __api = twitter.Api
+    __api = Api
 
     @staticmethod
     def __credentials(api_key, api_key_secret, access_token_key, access_token_secret):
@@ -21,13 +21,13 @@ class Twitter:
     def connect(api_key, api_key_secret, access_token_key, access_token_secret):
         Twitter.__credentials(api_key, api_key_secret, access_token_key, access_token_secret)
         try:
-            Twitter.__api = twitter.Api(
+            Twitter.__api = Api(
                 consumer_key=api_key,
                 consumer_secret=api_key_secret,
                 access_token_key=access_token_key,
                 access_token_secret=access_token_secret
             )
-        except twitter.TwitterError:
+        except TwitterError:
             print("FIX ME! Twitter.connect")
 
     @staticmethod
@@ -35,5 +35,5 @@ class Twitter:
         try:
             return Twitter.__api.GetSearch(raw_query=query, return_json=True)
             # TODO handle timeouts and limits
-        except twitter.TwitterError:
+        except TwitterError:
             print("FIX ME! Twitter.search")

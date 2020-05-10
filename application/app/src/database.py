@@ -1,9 +1,15 @@
-import logging
-import sqlite3
+import logging, sqlite3, os
+from src.logger import Logger
 
 
 class Database:
-    __database = sqlite3.connect('db/twitter.db', check_same_thread=False)
+    logger = Logger.logger
+    try:
+        os.makedirs('app/db')
+        logging.info('Created folder for database')
+    except FileExistsError:
+        logging.warning('Folder for database already present')
+    __database = sqlite3.connect('./app/db/twitter.db', check_same_thread=False)
     logging.info('Connection to DB open')
     # TODO be careful, allowing multiple threads may run in concurrency issues
 
