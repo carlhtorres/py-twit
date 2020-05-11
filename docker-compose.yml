@@ -1,50 +1,45 @@
-py-twit:
-  build: ./application
-  dockerfile: Dockerfile
-  environment:
-    - "API_KEY=${API_KEY}"
-    - "API_KEY_SECRET=${API_KEY_SECRET}"
-    - "ACCESS_TOKEN_KEY=${ACCESS_TOKEN_KEY}"
-    - "ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}"
-  ports:
-    - "8000:8000"
-  labels:
-    - co.elastic.logs/fileset.stdout=access
-    - co.elastic.logs/fileset.stderr=error
+version: "3.5"
 
-elasticsearch:
-  build: ./logging
-  dockerfile: Dockerfile-elasticsearch
-  environment:
-    - discovery.type=single-node
-    - ELASTIC_PASSWORD_FILE=/run/secrets/password.txt
-  labels:
-    - co.elastic.logs/fileset.stdout=access
-    - co.elastic.logs/fileset.stderr=error
+services:
+  py-twit:
+    hostname: py-twit
+    image: py-twit
+    build:
+      context: ./application
+      dockerfile: Dockerfile
+    environment:
+      - "API_KEY=${API_KEY}"
+      - "API_KEY_SECRET=${API_KEY_SECRET}"
+      - "ACCESS_TOKEN_KEY=${ACCESS_TOKEN_KEY}"
+      - "ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}"
+    ports:
+      - "8000:8000"
 
-filebeat:
-  build: ./logging
-  dockerfile: Dockerfile-filebeat
-  volumes:
-    - "/var/lib/docker/containers:/var/lib/docker/containers:ro"
-    - "/var/run/docker.sock:/var/run/docker.sock:ro"
-  environment:
-    - setup.kibana.host=kibana:5601
-    - output.elasticsearch.hosts=["elasticsearch:9200"]
-    - strict.perms=false
-  links:
-    - elasticsearch
-    - kibana
-  labels:
-    - co.elastic.logs/fileset.stdout=access
-    - co.elastic.logs/fileset.stderr=error
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD_FILE=/run/secrets/password.txt
+    labels:
+      - co.elastic.logs/fileset.stdout=access
+      - co.elastic.logs/fileset.stderr=error
 
-kibana:
-  image: docker.elastic.co/kibana/kibana:7.6.2
-  ports:
-    - "5601:5601"
-  links:
-    - elasticsearch
-  labels:
-    - co.elastic.logs/fileset.stdout=access
-    - co.elastic.logs/fileset.stderr=error
+  filebeat:
+    hostname: filebeat
+    image: filebeat:local
+    build:
+      context: ./logging
+      dockerfile: Dockerfile-filebeat
+    volumes:
+      - "/var/lib/docker/containers:/usr/share/filebeat/dockerlogs:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    links:
+      - elasticsearch
+      - kibana
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.2.4
+    ports:
+      - "5601:5601"
+    links:
+      - elasticsearch
