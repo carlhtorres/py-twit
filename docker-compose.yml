@@ -8,31 +8,36 @@ py-twit:
     - "ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}"
   ports:
     - "8000:8000"
-  links:
-    - filebeat
   labels:
-    - app
+    - co.elastic.logs/fileset.stdout=access
+    - co.elastic.logs/fileset.stderr=error
 
 elasticsearch:
-  image: docker.elastic.co/elasticsearch/elasticsearch:7.6.2
-  ports:
-    - "9200:9200"
-    - "9300:9300"
+  build: ./logging
+  dockerfile: Dockerfile-elasticsearch
   environment:
     - discovery.type=single-node
+    - ELASTIC_PASSWORD_FILE=/run/secrets/password.txt
   labels:
-    - logs
+    - co.elastic.logs/fileset.stdout=access
+    - co.elastic.logs/fileset.stderr=error
 
 filebeat:
-  image: docker.elastic.co/beats/filebeat:7.6.2
+  build: ./logging
+  dockerfile: Dockerfile-filebeat
+  volumes:
+    - "/var/lib/docker/containers:/var/lib/docker/containers:ro"
+    - "/var/run/docker.sock:/var/run/docker.sock:ro"
   environment:
     - setup.kibana.host=kibana:5601
     - output.elasticsearch.hosts=["elasticsearch:9200"]
+    - strict.perms=false
   links:
     - elasticsearch
     - kibana
   labels:
-    - logs
+    - co.elastic.logs/fileset.stdout=access
+    - co.elastic.logs/fileset.stderr=error
 
 kibana:
   image: docker.elastic.co/kibana/kibana:7.6.2
@@ -41,5 +46,5 @@ kibana:
   links:
     - elasticsearch
   labels:
-    - monitor
-
+    - co.elastic.logs/fileset.stdout=access
+    - co.elastic.logs/fileset.stderr=error
