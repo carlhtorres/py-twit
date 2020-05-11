@@ -1,4 +1,4 @@
-import sys, logging
+import sys, os, logging
 from src.client import Twitter
 from src.database import Database
 from src.server import Server
@@ -9,7 +9,12 @@ def main():
     logger = Logger.logger
     twitter = Twitter()
     # TODO add credentials from ENV VARS
-    twitter.connect(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    twitter.connect(
+        os.environ.get('API_KEY'),
+        os.environ.get('API_KEY_SECRET'),
+        os.environ.get('ACCESS_TOKEN_KEY'),
+        os.environ.get('ACCESS_TOKEN_SECRET'),
+    )
     Database.database_setup()
 
     for hashtag in Database.hashtags():
