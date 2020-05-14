@@ -1,9 +1,11 @@
 import sys, os, logging
+import prometheus_client
 from src.client import Twitter
 from src.database import Database
 from src.server import Server
 from src.logger import Logger
 
+REQUEST_TIME =
 
 def main():
     logger = Logger.logger
