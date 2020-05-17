@@ -1,4 +1,4 @@
-import sys, os, logging
+import os, logging
 from src.client import Twitter
 from src.database import Database
 from src.server import Server

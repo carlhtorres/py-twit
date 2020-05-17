@@ -2,7 +2,6 @@ version: "3.5"
 
 services:
   py-twit:
-    hostname: py-twit
     image: py-twit
     build:
       context: ./application
@@ -25,7 +24,6 @@ services:
       - co.elastic.logs/fileset.stderr=error
 
   filebeat:
-    hostname: filebeat
     image: filebeat:local
     build:
       context: ./logging
@@ -43,3 +41,22 @@ services:
       - "5601:5601"
     links:
       - elasticsearch
+
+  prometheus:
+    image: prometheus
+    build:
+      context: ./metrics
+      dockerfile: Dockerfile-prometheus
+    ports:
+      - "9090:9090"
+    links:
+      - py-twit
+
+  metricbeat:
+    image: metricbeat
+    build:
+      context: ./metrics
+      dockerfile: Dockerfile-metricbeat
+    links:
+      - prometheus
+      - kibana

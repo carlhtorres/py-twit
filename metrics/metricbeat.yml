@@ -1,0 +1,13 @@
+metricbeat.modules:
+- module: prometheus
+  metricsets: ["stats", "collector"]
+  period: 10s
+  hosts: ["prometheus:9090"]
+  metrics_path: /metrics
+  namespace: "request"
+- module: docker
+  metricsets: ["container", "cpu", "diskio", "healthcheck", "info", "memory", "network"]
+  hosts: ["unix:///var/run/docker.sock"]
+  period: 10s
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]

@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 1m
+  external_labels:
+    monitor: metrics
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+  - job_name: 'py-twit'
+    static_configs:
+      - targets: ['py-twit:8000']
+        labels:
+          group: 'app'
