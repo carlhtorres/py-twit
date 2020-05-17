@@ -43,3 +43,13 @@ services:
       - "5601:5601"
     links:
       - elasticsearch
+
+  prometheus:
+    image: prometheus
+    build:
+      context: ./metrics
+      dockerfile: Dockerfile-prometheus
+    links:
+      - kibana
+      - py-twit
+
