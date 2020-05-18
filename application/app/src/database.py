@@ -1,7 +1,9 @@
-import logging, sqlite3, os
-import datetime
+import logging, sqlite3, os, datetime
+from prometheus_client import Summary
 from src.logger import Logger
 
+
+REQUEST_TIME = Summary('request_db_processing_seconds', 'Time spent processing DB requests')
 
 class Database:
     logger = Logger.logger
@@ -17,6 +19,7 @@ class Database:
     # TODO be careful, allowing multiple threads may run in concurrency issues
 
     @staticmethod
+    @REQUEST_TIME.time()
     def database_setup():
         Database.__table_tweet_create()
         Database.__table_user_create()
@@ -26,6 +29,7 @@ class Database:
         logging.info(Logger.message('Database', 'Tables created succesfully'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def database_close():
         Database.__database.commit()
         logging.info(Logger.message('Database', 'Committing last changes'))
@@ -36,6 +40,7 @@ class Database:
         #  and convert to creator/destructor
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __table_hashtags_create():
         try:
             Database.__database.execute('CREATE TABLE hashtags (hashtag text primary key)')
@@ -45,6 +50,7 @@ class Database:
             logging.warning(Logger.message('Database', 'Failed to create table hashtag'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __table_tweet_create():
         create = '''CREATE TABLE tweets (
                         id text primary key,
@@ -61,6 +67,7 @@ class Database:
             logging.warning(Logger.message('Database', 'Failed to create table tweets'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __table_user_create():
         create = '''CREATE TABLE users (
                         id text primary key,
@@ -78,6 +85,7 @@ class Database:
             logging.warning(Logger.message('Database', 'Failed to create table users'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __table_hashtags_fill():
         try:
             # TODO create API to insert hashtags
@@ -101,6 +109,7 @@ class Database:
             logging.warning(Logger.message('Database', 'Hashtags already present on table'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __tweet_hashtags(json):
         hashtags = []
         for hashtag in json:
@@ -108,6 +117,7 @@ class Database:
         return str(hashtags)
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __tweet_format_tuple(tweet):
         return (
             tweet['id'],
@@ -120,6 +130,7 @@ class Database:
         )
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __tweet_tuple_to_dict(tweet):
         return {
             "id"      : tweet[0],
@@ -130,6 +141,7 @@ class Database:
         }
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __user_format_tuple(tweet):
         user_json = tweet['user']
         return (
@@ -142,6 +154,7 @@ class Database:
         )
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __user_tuple_to_dict(user):
         return {
             "id"         : user[0],
@@ -153,6 +166,7 @@ class Database:
         }
 
     @staticmethod
+    @REQUEST_TIME.time()
     def hashtags():
         try:
             dataset = Database.__database.execute('SELECT hashtag FROM hashtags;').fetchall()
@@ -162,6 +176,7 @@ class Database:
             logging.warning(Logger.message('Database', 'Problem querying hashtags'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __write_tweet(tweet):
         try:
             # TODO sanitize input
@@ -177,6 +192,7 @@ class Database:
             logging.warning(Logger.message('Database', 'Tweet already saved'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __write_user(tweet):
         try:
             Database.__database.execute(
@@ -191,6 +207,7 @@ class Database:
             logging.warning(Logger.message('Database', 'User already saved'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def write_data(tweet):
         try:
             Database.__write_tweet(tweet)
@@ -199,12 +216,14 @@ class Database:
             logging.warning(Logger.message('Database', 'Could not save data'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def write_tweets(tweets):
         for tweet in tweets:
             Database.write_data(tweet)
         logging.info(Logger.message('Database', 'Wrote complete tweets batch to table'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def get_tweet(id):
         try:
             tweet = Database.__database.execute(f'SELECT * FROM tweets WHERE id={id}').fetchone()
@@ -218,6 +237,7 @@ class Database:
             logging.warning(Logger.message('Database', 'Invalid query'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def get_tweet_list(hashtag):
         tweets = []
         try:
@@ -233,6 +253,7 @@ class Database:
         return tweets
 
     @staticmethod
+    @REQUEST_TIME.time()
     def get_user_top_followers():
         users = []
         try:
@@ -246,6 +267,7 @@ class Database:
         return users
 
     @staticmethod
+    @REQUEST_TIME.time()
     def get_tweets_by_hour():
         try:
             return Database.__database.execute(

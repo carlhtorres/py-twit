@@ -4,27 +4,17 @@ from src.database import Database
 from src.logger import Logger
 from src.client import Twitter
 
-REQUEST_TIME = Summary('request_processing_seconds', 'Time spent processing request')
+REQUEST_TIME = Summary('request_api_processing_seconds', 'Time spent processing api requests')
 
 
 class Server:
     __app = flask.Flask(__name__, static_url_path='', static_folder='static')
     __app.secret_key = "makemerandom"
 
-    # @staticmethod
-    # @__app.route('/')
-    # def index():
-    #     return flask.render_template('index.html', title='py-Twit')
-
     @staticmethod
     @__app.route('/favicon.ico')
     def favicon():
         return Server.__app.send_static_file('favicon.ico')
-
-    # @staticmethod
-    # @__app.route('/api/create', methods=['POST', ])
-    # def create():
-    #     pass
 
     @staticmethod
     @__app.route('/api/read/tweet/<tweet_id>')
@@ -75,18 +65,9 @@ class Server:
             data.append(dict)
         return json.dumps(data)
 
-    # @staticmethod
-    # @__app.route('/api/update', methods=['PUT', ])
-    # def update():
-    #     pass
-    #
-    # @staticmethod
-    # @__app.route('/api/delete')
-    # def delete():
-    #     pass
-
     @staticmethod
     @__app.route('/metrics')
+    @REQUEST_TIME.time()
     def metrics():
         logging.info(Logger.message('Server', 'Scrapping prometheus metrics'))
         return make_wsgi_app()
