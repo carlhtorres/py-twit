@@ -14,7 +14,8 @@ class Twitter:
                 consumer_key=api_key,
                 consumer_secret=api_key_secret,
                 access_token_key=access_token_key,
-                access_token_secret=access_token_secret
+                access_token_secret=access_token_secret,
+                tweet_mode='extended'
             )
             logging.info(Logger.message('Twitter', 'Connection stablished'))
         except TwitterError:
