@@ -61,6 +61,7 @@ class Server:
         for entry in statistics:
             dict = {
                 'time': entry[0],
+                'count': entry[1]
             }
             data.append(dict)
         return json.dumps(data)

@@ -1,0 +1,140 @@
+{
+	"info": {
+		"_postman_id": "e22d39f5-c752-48a5-b6aa-0b6e3b8ff627",
+		"name": "py-twit",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Search all tweets",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/search/all",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"search",
+						"all"
+					]
+				},
+				"description": "Load database with tweets"
+			},
+			"response": []
+		},
+		{
+			"name": "Hashtag DevOps",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/read/hashtag/devops",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"read",
+						"hashtag",
+						"devops"
+					]
+				},
+				"description": "Return all tweets with matching hashtag"
+			},
+			"response": []
+		},
+		{
+			"name": "Get tweet",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/read/tweet/1262348503377985537",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"read",
+						"tweet",
+						"1262348503377985537"
+					]
+				},
+				"description": "Change the tweet ID and get his info from the api"
+			},
+			"response": []
+		},
+		{
+			"name": "Users with most followers",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/statistics/users",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"statistics",
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Tweets aggregated",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/statistics/tweets",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"statistics",
+						"tweets"
+					]
+				},
+				"description": "Tweets grouped by one hour interval from the DB"
+			},
+			"response": []
+		},
+		{
+			"name": "Prometheus metrics",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/metrics",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"metrics"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
