@@ -85,6 +85,10 @@ Para visualizar os dados salvos, podemos acessar o Kibana, que lê as informaç�
 Podemos ver abaixo uma ilustração da infraestrutura, com o fluxo de logs e métricas da aplicação anotados.
 ![infra](./docs/py-twit.png)
 
+OS containers do elasticsearch e do py-twit contam com volumes do docker para manter a persistência do banco de dados.
+Para salvar qualquer dashboard e configurações, o Kibana também tem seu volume. As demais aplicações somente 
+dependem de seu arquivos de configuração e funcionam de uma forma stateless.
+
 # Referências
 - Como configurar filebeat para coletar todos os logs gerados pelo docker:
 [Powerful logging with Docker, Filebeat and Elasticsearch
