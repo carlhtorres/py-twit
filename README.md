@@ -1,32 +1,64 @@
-# SRE Case - Py-Twit
+# SRE Case - py-twit
 Colete as últimas postagens do Twitter, dado o seguinte conjunto de tags.
 ```text
 #openbanking, #remediation, #devops, #sre, #microservices, #observability, #oauth, #metrics, #logmonitoring, #opentracing
 ```
 Obtenha os dados sumarizados sobre usuários e postagens por hora e por local/idioma através da API fornecida.
 
-## Código
-Escrito em Python, usando as bibliotecas [flask](https://flask.palletsprojects.com/en/1.1.x/),
-[request](https://requests.readthedocs.io/en/master/user/quickstart/), 
-[sqlite3](https://docs.python.org/3/library/sqlite3.html),
-[logging](https://docs.python.org/3/library/logging.html) e 
-[prometheus_client](https://github.com/prometheus/client_python).
+## Deploy
+Adicione como variáveis de ambiente suas credenciais da API do Twitter:
+```bash
+export API_KEY=<your API key>
+export API_KEY_SECRET=<your API secret key>
+export ACCESS_TOKEN_KEY=<your access token>
+export ACCESS_TOKEN_SECRET=<your access token secret>
+```
 
-## Logging
-Logs gerados pela biblioteca padrão do Python e enviados para um
-[elastic search](https://medium.com/@bcoste/powerful-logging-with-docker-filebeat-and-elasticsearch-8ad021aecd87)
-usando [filebeats](https://www.elastic.co/guide/en/beats/filebeat/current/load-kibana-dashboards.html).
-Estatísticas básicas podem ser obtidas usando queries no Kibana com a
-[lucene syntax](https://lucene.apache.org/core/2_9_4/queryparsersyntax.html) ou
-[query DSL](https://lucene.apache.org/core/2_9_4/queryparsersyntax.html).
+Depois, basta executar o docker-compose na raiz do repositório clonado do git,
+[py-twit](https://github.com/carlhtorres/py-twit).
+```bash
+docker-compose up --build --detach
+```
+
+A API deve ficar disponível em `localhost:8000`, e o Kibana em `localhost:5601`.
+
+## Aplicação
+O Dockerfile, as dependências do pip e as configurações de logs encontram-se em `./application`.
+O código fonte está aninhado em `./application/app`. Escrito em python3, para executá-lo isolado declare as variáveis
+de ambiente necessárias e execute:
+```bash
+cd ./application/app
+pip install --no-cache-dir -r ../requirements.txt
+python3 py-twit.py
+```
+A API deve ficar disponível em [localhost:8000](http://localhost:8000). Métrica podem ser acessadas em
+[localhost:8000/metrics](http://localhost:8000/metrics). Vale notar que os logs serão direcionados para o STDOUT.
+
+## Logs
+### WIP
 
 ## Métricas
-Métricas sobre a aplicacão serão exportadas usando o formato do
-[Prometheus](https://prometheus.io/).
-Para as métricas temporais, posso usar o plugin do timelion para o
-[prometheus](https://github.com/lmangani/timelion-prometheus) e utilizar nova o Kibana para montar dashboards.
+### WIP
 
-## Facilidade de Deploy
-A aplicacão deverá rodar, com containers individuais para cada componotente da infraestrutura,
-sendo coordenada por um arquivo de configuracão do docker-compose.
-Dependências extras devem ser resolvidas usando um simples script bash.
+## Infraestrutura
+A aplicação é encapsulado em um container que é construído junto com a execução do `docker-compose`.
+A API e as métricas são expostas na 8000.
+
+Os logs são escritos para o STDOUT e ficam disponíveis para o filebeat através do gerenciamento de logs do docker.
+O filebeat persiste os logs de todos os containers no elasticsearch(ES).
+
+As métricas são agregadas em um container contendo o servidor de Prometheus, que por sua vez fornece as métricas para
+um container do metricbeat que as persiste no ES.
+
+Para visualizar os dados salvos, podemos acessar o Kibana, que lê as informações salvas no ES.
+
+Podemos ver abaixo uma ilustração da infraestrutura, com o fluxo de logs e métricas da aplicação anotados.
+![infra](./docs/py-twit.png)
+
+# Referências
+- Como configurar filebeat para coletar todos os logs gerados pelo docker:
+[Powerful logging with Docker, Filebeat and Elasticsearch
+Bruno COSTE](https://medium.com/@bcoste/powerful-logging-with-docker-filebeat-and-elasticsearch-8ad021aecd87).
+- Biblioteca para acessar a API do Twitter e buscar: [python-twitter](https://python-twitter.readthedocs.io/en/latest/).
+- Documentação oficial do elasticsearch, kibana, filebeat e metricbeat, para as versões **6.2.4**.
+- Documentação oficial do sqlite3 e do python 3.

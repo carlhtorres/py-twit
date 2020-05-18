@@ -34,8 +34,6 @@ output.elasticsearch:
     path: "fields.yml"
     overwrite: false
   protocol: "http"
-  username: "elastic"
-  password: "pytwit2020"
 
 logging:
   to_files: true
