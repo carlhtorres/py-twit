@@ -1,7 +1,7 @@
 import json, logging, flask
 from prometheus_client import Summary, make_wsgi_app
-from werkzeug.middleware.dispatcher import  DispatcherMiddleware
 from src.database import Database
+from src.logger import Logger
 
 REQUEST_TIME = Summary('request_processing_seconds', 'Time spent processing request')
 
@@ -25,12 +25,10 @@ class Server:
     #     pass
 
     @staticmethod
-    @__app.route('/api/read')
+    @__app.route('/api/read/<tweet_id>')
     @REQUEST_TIME.time()
-    def read():
-        logging.info('Needs more implementation')
-        # TODO properly formatted json
-        return json.dumps(Database.all_tweets())
+    def read(tweet_id):
+        return json.dumps(Database.tweet(tweet_id))
 
     # @staticmethod
     # @__app.route('/api/update', methods=['PUT', ])
@@ -45,9 +43,10 @@ class Server:
     @staticmethod
     @__app.route('/metrics')
     def metrics():
-        logging.info('Scrapping prometheus metrics')
+        logging.info(Logger.message('Server', 'Scrapping prometheus metrics'))
         return make_wsgi_app()
 
     @staticmethod
     def run(host, port):
+        logging.info(Logger.message('Server', 'Starting flask server'))
         Server.__app.run(host=host, port=port)

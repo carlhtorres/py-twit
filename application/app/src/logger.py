@@ -8,3 +8,7 @@ class Logger:
     @property
     def logger(self):
         return Logger.__logger
+
+    @staticmethod
+    def message(myclass, string):
+        return f'"{myclass}": "{string}"'
