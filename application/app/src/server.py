@@ -8,18 +8,18 @@ REQUEST_TIME = Summary('request_processing_seconds', 'Time spent processing requ
 
 
 class Server:
-    __app = flask.Flask(__name__)
+    __app = flask.Flask(__name__, static_url_path='', static_folder='static')
     __app.secret_key = "makemerandom"
 
     # @staticmethod
     # @__app.route('/')
     # def index():
     #     return flask.render_template('index.html', title='py-Twit')
-    #
+
     @staticmethod
     @__app.route('/favicon.ico')
     def favicon():
-        return flask.send_from_directory(flask.url_for('static'), filename='favicon.ico')
+        return Server.__app.send_static_file('favicon.ico')
 
     # @staticmethod
     # @__app.route('/api/create', methods=['POST', ])
@@ -27,14 +27,23 @@ class Server:
     #     pass
 
     @staticmethod
-    @__app.route('/api/read/<tweet_id>')
+    @__app.route('/api/read/tweet/<tweet_id>')
     @REQUEST_TIME.time()
-    def read(tweet_id):
+    def read_tweet(tweet_id):
         try:
-            raw = Database.tweet(tweet_id)
+            raw = Database.get_tweet(tweet_id)
             return json.dumps(raw)
         except ValueError:
-            return '\"{}\"'
+            return json.dumps({'success': False}), 500, {'ContentType': 'application/json'}
+
+    @staticmethod
+    @__app.route('/api/read/hashtag/<hashtag>')
+    @REQUEST_TIME.time()
+    def read_hashtag(hashtag):
+        try:
+            return json.dumps(Database.get_tweet_list(hashtag))
+        except ValueError:
+            return json.dumps({'success': False}), 500, {'ContentType': 'application/json'}
 
     @staticmethod
     @__app.route('/api/search/all')
@@ -46,6 +55,25 @@ class Server:
             for tweet in twitter.search(f'q=%23{hashtag[0]}')["statuses"]:
                 Database.write_data(tweet)
         return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+
+    @staticmethod
+    @__app.route('/api/statistics/users')
+    @REQUEST_TIME.time()
+    def statistics_users():
+        return json.dumps(Database.get_user_top_followers())
+
+    @staticmethod
+    @__app.route('/api/statistics/tweets')
+    @REQUEST_TIME.time()
+    def statistics_tweets():
+        statistics = Database.get_tweets_by_hour()
+        data = []
+        for entry in statistics:
+            dict = {
+                'time': entry[0],
+            }
+            data.append(dict)
+        return json.dumps(data)
 
     # @staticmethod
     # @__app.route('/api/update', methods=['PUT', ])
@@ -66,4 +94,4 @@ class Server:
     @staticmethod
     def run(host, port):
         logging.info(Logger.message('Server', 'Starting flask server'))
-        Server.__app.run(host=host, port=port)
+        Server.__app.run(host=host, port=port, debug=True)
