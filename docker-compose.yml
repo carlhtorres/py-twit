@@ -2,7 +2,7 @@ version: "3.5"
 
 services:
   py-twit:
-    image: py-twit
+    image: py-twit:local
     build:
       context: ./application
       dockerfile: Dockerfile
@@ -13,11 +13,19 @@ services:
       - "ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}"
     ports:
       - "8000:8000"
+    volumes:
+      - db-tweets:/usr/app/db
+    networks:
+      - pytwit
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
     environment:
       - discovery.type=single-node
+    volumes:
+      - elasticsearch:/usr/share/elasticsearch/data
+    networks:
+      - pytwit
 
   filebeat:
     image: filebeat:local
@@ -27,32 +35,42 @@ services:
     volumes:
       - "/var/lib/docker/containers:/usr/share/filebeat/dockerlogs:ro"
       - "/var/run/docker.sock:/var/run/docker.sock"
-    links:
-      - elasticsearch
-      - kibana
+    networks:
+      - pytwit
 
   kibana:
     image: docker.elastic.co/kibana/kibana:6.2.4
     ports:
       - "5601:5601"
-    links:
-      - elasticsearch
+    volumes:
+      - kibana:/usr/share/kibana/config
+    networks:
+      - pytwit
 
   prometheus:
     image: prometheus
     build:
       context: ./metrics
       dockerfile: Dockerfile-prometheus
-    ports:
-      - "9090:9090"
-    links:
-      - py-twit
+    networks:
+      - pytwit
 
   metricbeat:
     image: metricbeat
     build:
       context: ./metrics
       dockerfile: Dockerfile-metricbeat
-    links:
-      - prometheus
-      - kibana
+    networks:
+      - pytwit
+
+volumes:
+  db-tweets:
+    driver: local
+  elasticsearch:
+    driver: local
+  kibana:
+    driver: local
+
+networks:
+  pytwit:
+    driver: bridge

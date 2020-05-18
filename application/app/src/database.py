@@ -1,64 +1,94 @@
-import logging, sqlite3, os
+import logging, sqlite3, os, datetime
+from prometheus_client import Summary
 from src.logger import Logger
 
 
+REQUEST_TIME = Summary('request_db_processing_seconds', 'Time spent processing DB requests')
+
 class Database:
     logger = Logger.logger
+
     try:
-        os.makedirs('app/db')
-        logging.info('Created folder for database')
+        os.makedirs('db')
+        logging.info(Logger.message('Database', 'Created folder for database'))
     except FileExistsError:
         logging.warning('Folder for database already present')
-    __database = sqlite3.connect('./app/db/twitter.db', check_same_thread=False)
-    logging.info('Connection to DB open')
+    __database = sqlite3.connect('db/twitter.db', check_same_thread=False)
+    logging.info(Logger.message('Database', 'Connection to DB open'))
+
     # TODO be careful, allowing multiple threads may run in concurrency issues
 
     @staticmethod
+    @REQUEST_TIME.time()
     def database_setup():
         Database.__table_tweet_create()
+        Database.__table_user_create()
         Database.__table_hashtags_create()
         Database.__table_hashtags_fill()
-        logging.info('Tables created succesfully')
+        Database.__database.commit()
+        logging.info(Logger.message('Database', 'Tables created succesfully'))
 
     @staticmethod
+    @REQUEST_TIME.time()
     def database_close():
         Database.__database.commit()
-        logging.info('Committing last changes')
+        logging.info(Logger.message('Database', 'Committing last changes'))
         Database.__database.close()
-        logging.info('Database connection closed succesfully')
+        logging.info(Logger.message('Database', 'Database connection closed succesfully'))
         # TODO check if this may throws errors
         #  I should apply TDD if have time
         #  and convert to creator/destructor
 
     @staticmethod
+    @REQUEST_TIME.time()
     def __table_hashtags_create():
         try:
             Database.__database.execute('CREATE TABLE hashtags (hashtag text primary key)')
             Database.__database.commit()
-            logging.info('Created hashtags table')
+            logging.info(Logger.message('Database', 'Created hashtags table'))
         except sqlite3.OperationalError:
-            logging.warning('Failed to create table hashtag')
+            logging.warning(Logger.message('Database', 'Failed to create table hashtag'))
 
-    @classmethod
-    def __table_tweet_create(cls):
+    @staticmethod
+    @REQUEST_TIME.time()
+    def __table_tweet_create():
         create = '''CREATE TABLE tweets (
                         id text primary key,
                         created_at date,
                         text text,
                         hashtag text,
-                        user text
+                        user_id text
                     )'''
         try:
             Database.__database.execute(create)
             Database.__database.commit()
-            logging.info('Created tweets table')
+            logging.info(Logger.message('Database', 'Created tweets table'))
         except sqlite3.OperationalError:
-            logging.warning('Failed to create table tweets')
+            logging.warning(Logger.message('Database', 'Failed to create table tweets'))
 
     @staticmethod
+    @REQUEST_TIME.time()
+    def __table_user_create():
+        create = '''CREATE TABLE users (
+                        id text primary key,
+                        screen_name text,
+                        name text,
+                        location text,
+                        lang text,
+                        followers integer
+                    )'''
+        try:
+            Database.__database.execute(create)
+            Database.__database.commit()
+            logging.info(Logger.message('Database', 'Created users table'))
+        except sqlite3.OperationalError:
+            logging.warning(Logger.message('Database', 'Failed to create table users'))
+
+    @staticmethod
+    @REQUEST_TIME.time()
     def __table_hashtags_fill():
         try:
-            # TODO improve inserting/importing this data
+            # TODO create API to insert hashtags
             Database.__database.execute('''
                 INSERT INTO hashtags
                 VALUES
@@ -74,64 +104,180 @@ class Database:
                     ('opentracing')
             ''')
             Database.__database.commit()
-            logging.info('Filled hashtag table with hashtags')
+            logging.info(Logger.message('Database', 'Filled hashtag table with hashtags'))
         except sqlite3.IntegrityError:
-            logging.warning('Hashtags already present on table')
+            logging.warning(Logger.message('Database', 'Hashtags already present on table'))
 
     @staticmethod
+    @REQUEST_TIME.time()
+    def __tweet_hashtags(json):
+        hashtags = []
+        for hashtag in json:
+            hashtags.append(hashtag['text'])
+        return str(hashtags)
+
+    @staticmethod
+    @REQUEST_TIME.time()
+    def __tweet_format_tuple(tweet):
+        return (
+            tweet['id'],
+            datetime.datetime.strptime(
+                tweet['created_at'], '%a %b %d %H:%M:%S %z %Y'
+            ),
+            str(tweet['full_text']),
+            Database.__tweet_hashtags(tweet['entities']['hashtags']),
+            tweet['user']['id'],
+        )
+
+    @staticmethod
+    @REQUEST_TIME.time()
+    def __tweet_tuple_to_dict(tweet):
+        return {
+            "id"      : tweet[0],
+            "date"    : tweet[1],
+            "message" : tweet[2],
+            "hashtags": tweet[3],
+            "user_id" : tweet[4]
+        }
+
+    @staticmethod
+    @REQUEST_TIME.time()
+    def __user_format_tuple(tweet):
+        user_json = tweet['user']
+        return (
+            user_json['id'],
+            user_json['screen_name'],
+            user_json['name'],
+            user_json['location'],
+            tweet['lang'],
+            user_json['followers_count']
+        )
+
+    @staticmethod
+    @REQUEST_TIME.time()
+    def __user_tuple_to_dict(user):
+        return {
+            "id"         : user[0],
+            "screen_name": user[1],
+            "name"       : user[2],
+            "location"   : user[3],
+            "lang"       : user[4],
+            "followers"  : user[5]
+        }
+
+    @staticmethod
+    @REQUEST_TIME.time()
     def hashtags():
         try:
             dataset = Database.__database.execute('SELECT hashtag FROM hashtags;').fetchall()
-            logging.info('Selected all hashtags from table')
+            logging.info(Logger.message('Database', 'Selected all hashtags from table'))
             return dataset
         except sqlite3.OperationalError:
-            logging.warning('Problem querying hashtags')
+            logging.warning(Logger.message('Database', 'Problem querying hashtags'))
 
     @staticmethod
-    def write_tweet(tweet):
+    @REQUEST_TIME.time()
+    def __write_tweet(tweet):
         try:
             # TODO sanitize input
-            Database.__database.execute('INSERT INTO tweets VALUES (?, ?, ?, ?, ?)', tweet)
-            logging.info('Wrote tweet to table')
-            logging.debug(f'Wrote tweet {tweet[0]} to table')
+            Database.__database.execute(
+                'INSERT INTO tweets VALUES (?, ?, ?, ?, ?)',
+                Database.__tweet_format_tuple(tweet)
+            )
+            Database.__database.commit()
+            logging.debug(Logger.message('Database', f'Wrote get_tweet to table'))
         except sqlite3.OperationalError:
-            logging.warning('Could not write tweet to database')
+            logging.warning(Logger.message('Database', 'Could not write get_tweet to table'))
         except sqlite3.IntegrityError:
-            logging.warning('Tweet already saved')
+            logging.warning(Logger.message('Database', 'Tweet already saved'))
 
     @staticmethod
+    @REQUEST_TIME.time()
+    def __write_user(tweet):
+        try:
+            Database.__database.execute(
+                'INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)',
+                Database.__user_format_tuple(tweet)
+            )
+            Database.__database.commit()
+            logging.debug(Logger.message('Database', f'Wrote user to table'))
+        except sqlite3.OperationalError:
+            logging.warning(Logger.message('Database', 'Could not write user to table'))
+        except sqlite3.IntegrityError:
+            logging.warning(Logger.message('Database', 'User already saved'))
+
+    @staticmethod
+    @REQUEST_TIME.time()
+    def write_data(tweet):
+        try:
+            Database.__write_tweet(tweet)
+            Database.__write_user(tweet)
+        except TypeError:
+            logging.warning(Logger.message('Database', 'Could not save data'))
+
+    @staticmethod
+    @REQUEST_TIME.time()
     def write_tweets(tweets):
         for tweet in tweets:
-            Database.write_tweet(tweet)
-            # TODO tryout sqlite3.executemany()
-            #  if it is more performatic or if it can tolerate failures
-            #  in the data passed
-        logging.info('Wrote complete tweets batch to table')
+            Database.write_data(tweet)
+        logging.info(Logger.message('Database', 'Wrote complete tweets batch to table'))
 
     @staticmethod
-    def tweet(id):
+    @REQUEST_TIME.time()
+    def get_tweet(id):
         try:
-            tweet = Database.__database.execute('SELECT * FROM tweets WHERE id=?', id)
-            logging.info('Retrieved tweet from table')
-            logging.debug(f'Retrieved tweet {id} from table')
-            return tweet
+            tweet = Database.__database.execute(f'SELECT * FROM tweets WHERE id={id}').fetchone()
+            if tweet is not None:
+                logging.debug(Logger.message('Database', f'Retrieved get_tweet {id} from table'))
+                return Database.__tweet_tuple_to_dict(tweet)
+            raise ValueError('Invalid ID')
         except sqlite3.OperationalError:
-            logging.warning('Invalid ID')
+            logging.warning(Logger.message('Database', 'Operational error'))
+        except sqlite3.ProgrammingError:
+            logging.warning(Logger.message('Database', 'Invalid query'))
 
     @staticmethod
-    def tweets(ids):
+    @REQUEST_TIME.time()
+    def get_tweet_list(hashtag):
         tweets = []
-        for id in ids:
-            tweets.append(Database.tweet(id))
-        logging.info('Finished querying tweets table')
-        # TODO check if execute many works here too
+        try:
+            raw = Database.__database.execute(f'SELECT * FROM tweets WHERE hashtag LIKE "%{hashtag}%"').fetchall()
+            if len(raw) > 0:
+                logging.debug(Logger.message('Database', f'Returned {len(tweets)} from table'))
+                for tweet in raw:
+                    tweets.append(Database.__tweet_tuple_to_dict(tweet))
+        except sqlite3.OperationalError:
+            logging.warning(Logger.message('Database', 'Operational error'))
+        except sqlite3.ProgrammingError:
+            logging.warning(Logger.message('Database', 'Invalid query'))
         return tweets
 
     @staticmethod
-    def all_tweets():
+    @REQUEST_TIME.time()
+    def get_user_top_followers():
+        users = []
         try:
-            dataset = Database.__database.execute('SELECT * FROM tweets').fetchall()
-            logging.info('Retrieved all tweets from table')
-            return dataset
+            raw = Database.__database.execute('SELECT * FROM users ORDER BY followers DESC').fetchmany(5)
+            for user in raw:
+                users.append(Database.__user_tuple_to_dict(user))
         except sqlite3.OperationalError:
-            logging.warning('Problem querying tweets')
+            logging.warning(Logger.message('Database', 'Operational error'))
+        except sqlite3.ProgrammingError:
+            logging.warning(Logger.message('Database', 'Invalid query'))
+        return users
+
+    @staticmethod
+    @REQUEST_TIME.time()
+    def get_tweets_by_hour():
+        try:
+            return Database.__database.execute(
+                '''
+                    SELECT datetime((strftime("%s", created_at) / 3600) * 3600, "unixepoch") interval, count(*) cnt
+                    FROM tweets
+                    GROUP BY interval
+                '''
+            ).fetchall()
+        except sqlite3.OperationalError:
+            logging.warning(Logger.message('Database', 'Operational error'))
+        except sqlite3.ProgrammingError:
+            logging.warning(Logger.message('Database', 'Invalid query'))

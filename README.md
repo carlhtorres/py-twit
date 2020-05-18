@@ -34,11 +34,41 @@ python3 py-twit.py
 A API deve ficar disponível em [localhost:8000](http://localhost:8000). Métrica podem ser acessadas em
 [localhost:8000/metrics](http://localhost:8000/metrics). Vale notar que os logs serão direcionados para o STDOUT.
 
+### API
+Os seguintes pontos de acesso estão disponíveis. Todos respondem com um JSON, salvo o endpoint do Prometheus.
+
+`/api/search/all`
+* Chama o processo que busca na API do Twitter e alimenta o banco de dados interno.
+
+`/api/read/tweet/<tweet_id>`
+* Retorna o tweet com o ID no fim da URL em questão.
+
+`/api/read/hashtag/<hashtag>`
+* Retorna todos os tweets que contenham a hashtag.
+
+`/api/statistics/users`
+* Retorna a lista com os 5 usuários com maior número de seguidores.
+
+`/api/statistics/tweets`
+* Retorna o agregado dos últimos tweets por hora.
+
+`/metrics`
+* Retorna as métricas do Prometheus
+
+Para auxiliar no uso da API, encontra-se [aqui](./docs/py-twit.postman_collection.json) uma coleção do Postman
+com as requests já configuradas.
+
 ## Logs
 ### WIP
+Escrever as queries para filtrar os dados salvos no ES. Vide imagem de exemplo.
+![filebeat](./docs/filebeat.png)
 
 ## Métricas
 ### WIP
+Escrever as queries para filtrar os dados salvos no Prometheus e 
+estender a cobertura do monitoramento dentro da aplicação.
+As métricas já estão salvas no ES.
+![metricbeat](./docs/metricbeat.png)
 
 ## Infraestrutura
 A aplicação é encapsulado em um container que é construído junto com a execução do `docker-compose`.
@@ -54,6 +84,10 @@ Para visualizar os dados salvos, podemos acessar o Kibana, que lê as informaç�
 
 Podemos ver abaixo uma ilustração da infraestrutura, com o fluxo de logs e métricas da aplicação anotados.
 ![infra](./docs/py-twit.png)
+
+OS containers do elasticsearch e do py-twit contam com volumes do docker para manter a persistência do banco de dados.
+Para salvar qualquer dashboard e configurações, o Kibana também tem seu volume. As demais aplicações somente 
+dependem de seu arquivos de configuração e funcionam de uma forma stateless.
 
 # Referências
 - Como configurar filebeat para coletar todos os logs gerados pelo docker:
